@@ -16,8 +16,7 @@
       >
         <el-form-item class="login-form-item">
           <el-input
-            type="password"
-            v-model="loginForm.password"
+            v-model="loginForm.username"
             placeholder="请输入用户名"
             size="mini"
           ></el-input>
@@ -31,7 +30,7 @@
           ></el-input>
         </el-form-item>
         <el-form-item class="login-form-item">
-          <el-button type="primary" size="mini">登录</el-button>
+          <el-button type="primary" size="mini" @click="toLogin">登录</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -42,10 +41,38 @@
 export default {
   data() {
     return {
-      loginForm: {},
+      loginForm: {
+        username: "待炒的鱼7",
+        password: "888888"
+      },
       loginRules: {}
-    };
-  }
+    }
+  },
+  methods: {
+    toLogin() {
+      this.$http({
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        url: "http://localhost:8888/users/login",
+        data: {
+          username: this.loginForm.username,
+          password: this.loginForm.password
+        }
+      }).then(res => {
+        let data = res.data
+         this.$message({
+          message: data.msg,
+          type: data.success? 'success': 'warning'
+        });
+        if (data.success) {
+          localStorage.setItem("token", data.token)
+          setTimeout(() => {
+            this.$router.push("/home")
+          }, 1000)
+        }
+      })
+    }
+  },
 };
 </script>
 

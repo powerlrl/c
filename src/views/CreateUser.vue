@@ -179,7 +179,8 @@ export default {
     };
   },
   async mounted() {
-    this.handleGetUser()
+    this.handleGetUsers()
+    // this.getUserInfo()
   },
   methods: {
     handleEdit(index, row) {
@@ -292,13 +293,13 @@ export default {
       this.dialogVisibleEdit = false;
       
     },
-    // 查询用户信息
-    handleGetUser() {
+    // 查询用户信息列表的
+    handleGetUsers() {
       axios.get("http://localhost:8888/users").then(res => {
-        console.log(res);
         this.tableData = res.data;
       });
     },
+   
   }
 };
 </script>

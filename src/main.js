@@ -18,8 +18,10 @@ import echarts from 'echarts'
 Vue.prototype.$echarts = echarts
 
 // 使用axios
-import { http } from './http.js'
-Vue.prototype.$http = http
+// import { http } from './http.js'
+// Vue.prototype.$http = http
+import axios from 'axios'
+Vue.prototype.$http = axios
 
 
 Vue.config.productionTip = false

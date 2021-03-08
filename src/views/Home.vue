@@ -3,7 +3,10 @@
     <el-header>
       <div class="user-info">
         <div class="user-info-avatar">
-          <img src="https://dss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=321977946,1513972973&fm=26&gp=0.jpg" alt="">
+          <img
+            src="https://dss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=321977946,1513972973&fm=26&gp=0.jpg"
+            alt=""
+          />
         </div>
         <div class="user-info-username">待炒的鱼</div>
       </div>
@@ -25,9 +28,29 @@ import NavBar from "@/components/NavBar";
 
 export default {
   components: {
-    NavBar,
+    NavBar
     // MainHome,
   },
+  created() {
+    this.getUserInfo();
+  },
+  methods: {
+    // 查询登录用户信息
+    getUserInfo() {
+      let token = localStorage.getItem("token");
+      this.$http
+        .get({
+          url: "http://localhost:8888/users/profile",
+          headers: {
+            "Content-Type": "application/json",
+             authorization: `Bearer ${token}`
+          }
+        })
+        .then(res => {
+          console.log(res);
+        });
+    }
+  }
 };
 </script>
 

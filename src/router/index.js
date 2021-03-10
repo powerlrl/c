@@ -11,18 +11,26 @@ import WzPurchase from 'views/wz/WzPurchase'
 import WzPutStorage from 'views/wz/WzPutStorage'
 import WzClaims from 'views/wz/WzClaims'
 import WzFinancial from 'views/wz/WzFinancial'
+import Error from 'views/Error'
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
     component: Login
-  }, 
+  },
+  {
+    path: '*',
+    redirect: '/error'
+  },
+  {
+    path: '/error',
+    component: Error
+  },
   {
     path: '/home',
     component: Home,
-    children: [
-      {
+    children: [{
         path: "/",
         component: MainHome
       },
@@ -56,11 +64,23 @@ const routes = [
       }
     ],
   }
-  
+
 ]
 
 const router = new VueRouter({
   routes
 })
+
+
+// 添加导航守卫
+router.beforeEach((to, from, next)=> {
+  const token = localStorage.getItem("token")
+  // 没有匹配到路由
+  if (!token && to.path != "/") {
+    next("/")
+  } else {
+    next()
+  }
+}) 
 
 export default router

@@ -8,7 +8,8 @@
             alt=""
           />
         </div>
-        <div class="user-info-username">待炒的鱼</div>
+        <div class="user-info-username">{{ userInfo.username }}</div>
+        <el-button size="mini" type="danger" @click="exit">退出登录</el-button>
       </div>
     </el-header>
     <el-container>
@@ -34,20 +35,37 @@ export default {
   created() {
     this.getUserInfo();
   },
+  data() {
+    return {
+      userInfo: ""
+    }
+  },
   methods: {
     // 查询登录用户信息
     getUserInfo() {
       let token = localStorage.getItem("token");
-      this.$http
-        .get({
-          url: "http://localhost:8888/users/profile",
-          headers: {
-            "Content-Type": "application/json",
-             authorization: `Bearer ${token}`
+      this.$http({
+        type: "GET",
+        url: "http://localhost:8888/users/profile",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${token}`
+        }
+      }).then(res => {
+        this.userInfo = res.data
+      });
+    },
+    exit() {
+      this.$alert('请确认是否退出该账号？', '退出', {
+          confirmButtonText: '确定',
+          callback: action => {
+            this.$message({
+              type: 'success',
+              message: `退出成功`
+            });
+            localStorage.setItem("token", "")
+            this.$router.push('/')
           }
-        })
-        .then(res => {
-          console.log(res);
         });
     }
   }
@@ -75,6 +93,6 @@ export default {
   border-radius: 50%;
 }
 .user-info-username {
-  margin-left: 8px;
+  margin: 0 8px;
 }
 </style>

@@ -28,6 +28,7 @@ export default {
         { name: '入库登记', navItem: "/home/warehouseReg", icon: "el-icon-folder-add"},
         { name: '申领管理', navItem: "/home/claims", icon: "el-icon-suitcase"},
         { name: '财务报销', navItem: "/home/financial", icon: "el-icon-receiving"},
+        { name: '全国疫情', navItem: "/home/map", icon: "el-icon-map-location"},
       ],
     }
   },

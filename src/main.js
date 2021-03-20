@@ -22,7 +22,7 @@ Vue.prototype.$echarts = echarts
 // Vue.prototype.$http = http
 import axios from 'axios'
 Vue.prototype.$http = axios
-
+axios.defaults.baseURL = '/api'
 
 Vue.config.productionTip = false
 

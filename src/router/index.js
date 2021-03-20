@@ -11,7 +11,10 @@ import WzPurchase from 'views/wz/WzPurchase'
 import WzPutStorage from 'views/wz/WzPutStorage'
 import WzClaims from 'views/wz/WzClaims'
 import WzFinancial from 'views/wz/WzFinancial'
+
+import MapData from 'views/MapData'
 import Error from 'views/Error'
+
 Vue.use(VueRouter)
 
 const routes = [
@@ -61,6 +64,10 @@ const routes = [
       {
         path: "financial",
         component: WzFinancial
+      },
+      {
+        path: "map",
+        component: MapData
       }
     ],
   }

@@ -102,6 +102,9 @@
           background
           layout="prev, pager, next"
           :total="1000"
+          :page="page"
+          :page-size="10"
+          @current-change="handleCurrentChange"
         ></el-pagination>
       </div>
     </div>
@@ -211,6 +214,7 @@ export default {
   data() {
     return {
       selectValue: "",
+      page: 1,
       options: [
         {
           value: "校管理员",
@@ -421,7 +425,17 @@ export default {
     },
     // 查询用户信息列表的
     handleGetUsers() {
-      axios.get("http://localhost:8888/users").then(res => {
+      // axios.post("http://localhost:8888/users", this.page).then(res => {
+      //   this.tableData = res.data;
+      //   this.searchData = res.data;
+      // });
+      axios({
+        method: "POST",
+        url: "http://localhost:8888/users",
+        data: {
+          page: this.page
+        }
+      }).then(res => {
         this.tableData = res.data;
         this.searchData = res.data;
       });
@@ -440,6 +454,10 @@ export default {
           return this.selectValue == item.type;
         }
       });
+    },
+    handleCurrentChange(page) {
+      this.page = page;
+      this.handleGetUsers();
     }
   }
 };

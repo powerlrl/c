@@ -1,138 +1,209 @@
 <template>
   <div class="create-category">
-    <!-- 表格部分 -->
-    <div style="margin-top: 10px; text-align: right">
-      <el-button size="mini" type="primary" @click="addCategory">添加物资</el-button>
+    <div class="c-serach-bar">
+      <el-row :gutter="20">
+        <el-col :span="6">
+          <div class="grid-content bg-purple d-flex">
+            <div style="width: 100px;" class="search-item">物品名称:</div>
+            <el-input
+              type="text"
+              size="mini"
+              placeholder="请输入物品名称"
+              v-model="searchName"
+            />
+          </div>
+        </el-col>
+        <el-col :span="6">
+          <el-button
+            type="primary"
+            icon="el-icon-search"
+            size="mini"
+            @click="search"
+            round
+            >搜索</el-button
+          >
+        </el-col>
+      </el-row>
     </div>
     <div class="c-container">
       <el-table
-        :data="categories"
+      border
+        :data="searchData"
         style="width: 100%"
-        :cell-style="{textAlign: 'center'}"
-        :header-cell-style="{background: '#fafafa', textAlign: 'center'}"
+        :cell-style="{ textAlign: 'center' }"
+        :header-cell-style="{ background: '#fafafa', textAlign: 'center' }"
       >
-        <el-table-column label="分类编码" width="200">
+        <el-table-column
+          label="序号"
+          type="index"
+          width="50">
+        </el-table-column>
+        <el-table-column label="物资分类">
           <template slot-scope="scope">
-            <span style="margin-left: 10px">{{ scope.row.categoryId }}</span>
+            <span style="margin-left: 10px">{{ scope.row.category }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="分类名称" width="200">
+        <el-table-column label="物品名称">
           <template slot-scope="scope">
-            <span>{{ scope.row.categoryName }}</span>
+            <span>{{ scope.row.material }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="描述" width="200">
+        <el-table-column label="数量">
           <template slot-scope="scope">
-            <span>{{ scope.row.description }}</span>
+            <span>{{ scope.row.num }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="单价">
           <template slot-scope="scope">
-            <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
-            <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+            <span>{{ scope.row.price }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="采购人员">
+          <template slot-scope="scope">
+            <span>{{ scope.row.purseName }}</span>
+          </template> 
+        </el-table-column>
+        <el-table-column label="审核人员">
+          <template slot-scope="scope">
+            <span>{{ scope.row.accountName }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="审核状态" width="140">
+          <template slot-scope="scope">
+            <el-tag size="mini" :type="scope.row.status=='已报销'? 'success': 'danger'">{{ scope.row.status }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" v-if="show">
+          <template slot-scope="scope">
+            <el-button size="mini"  type="primary" icon="el-icon-check" circle @click="handleAudit(scope.row)"></el-button>
+            <el-button
+              size="mini"
+              @click="handleDelete(scope.row._id)"
+              type="info"
+              icon="el-icon-delete"
+              circle
+            ></el-button>
           </template>
         </el-table-column>
       </el-table>
       <!-- 分页 -->
       <div class="paginatioin">
-        <el-pagination background layout="prev, pager, next" :total="1000"></el-pagination>
+        <el-pagination
+          background
+          layout="prev, pager, next"
+          :total="20"
+          :page="page"
+          :page-size="10"
+          @current-change="handleCurrentChange"
+        ></el-pagination>
       </div>
     </div>
-
-    <!-- 弹出模态框 -->
-    <el-dialog title="添加物资" :visible.sync="dialogVisible" width="30%" :before-close="handleCloseDialog">
-      <el-form ref="addForm" :model="addForm" label-width="auto" :rules="categoryRules">
-        <el-form-item label="分类编码:" prop="categoryId">
-          <el-input size="mini" v-model="addForm.categoryId"></el-input>
-        </el-form-item>
-        <el-form-item label="分类名称:" prop="categoryName">
-          <el-input size="mini" v-model="addForm.categoryName"></el-input>
-        </el-form-item>
-         <el-form-item label="描述:" prop="description">
-          <el-input  v-model="addForm.description"></el-input>
-        </el-form-item>
-      </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button size="mini" @click="dialogVisible = false">取 消</el-button>
-        <el-button size="mini" type="primary" @click="handleSubmit('addForm')">确 定</el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 <script>
-import axios from 'axios'
+import axios from "axios";
 export default {
   data() {
     return {
       dialogVisible: false,
       addForm: {},
-      categories: [
-        {
-          categoryId: "01",
-          categoryName: "消毒水",
-          description: "这是一个消毒水"
-        },
-        {
-          categoryId: "02",
-          categoryName: "消毒水",
-          description: "这是一个消毒水"
-        },
-        {
-          categoryId: "03",
-          categoryName: "消毒水",
-          description: "这是一个消毒水"
-        },
-        {
-          categoryId: "04",
-          categoryName: "消毒水",
-          description: "这是一个消毒水"
-        },
-        {
-          categoryId: "05",
-          categoryName: "消毒水",
-          description: "这是一个消毒水"
-        }
-      ],
-      categoryRules: {
-        categoryId: {required: true, message: "请填写物资分类编码"},
-        categoryName: {required: true, message: "请填写物资分类名称"},
-        description: {required: true, message: "请填写物资分类的描述信息"},
-      },
+      tableData: [],
+      show: true,
+      searchData: [],
+      searchName: "",
+      userInfo: {},
+      page: 1,
     };
   },
- async mounted() {
-    
+  async mounted() {
+    this.handleGetAccount();
+    this.userInfo = JSON.parse(localStorage.getItem("userInfo"))
+    if (this.userInfo.type != '财务人员') {
+      this.show = false
+    }
   },
   methods: {
-    handleEdit(index, row) {
-      console.log(index, row);
-    },
-    handleDelete(index, row) {
-      console.log(index, row);
-    },
-    addCategory() {
-      this.dialogVisible = true;
-      
-    },
-    handleCloseDialog() {
-      this.dialogVisible = false;
-    },
-    // 添加物资分类
-    handleSubmit(form) {
-      this.$refs[form].validate(valid => {
-        if (!valid) {
-          this.$message.error('请仔细查看提交信息是否正确！');
-          return
+    // 查询用户信息
+    handleGetAccount() {
+      this.$http({
+        url: "http://localhost:8888/account",
+        method: "POST",
+        data: {
+          page: this.page,
         }
-        this.$message({
-          message: '提交成功！',
-          type: 'success'
+      }).then(res => {
+        this.tableData = res.data;
+        this.searchData = res.data
+      });
+    },
+    handleCurrentChange(page) {
+      this.page = page;
+      this.handleGetAccount();
+    },
+    search() {
+      if (this.searchName == "") {
+        this.searchData = this.tableData
+      }
+      if (this.searchName != '') {
+        this.searchData = this.searchData.filter(item => {
+          return item.material == this.searchName
         });
-        this.dialogVisible = false
+      }
+    },
+    handleDelete(id) {
+      this.$confirm("是否审核该记录, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
       })
-      // this.$refs[form].validate(valid => {
-      //   console.log(valid)
-      // })
+        .then(res => {
+          this.$http({
+            method: "DELETE",
+            url: `http://localhost:8888/account/${id}`,
+          }).then(() => {
+            this.handleGetAccount();
+            this.$message({
+                type: "success",
+                message: "删除成功!"
+              });
+          })
+        })
+        .catch(err => {
+          this.$message({
+            type: "info",
+            message: "已取消删除操作"
+          });
+        })
+    },
+    handleAudit(row) {
+      let params = {
+        status: "已报销",
+        accountName: this.userInfo.username
+      }
+      this.$confirm("是否审核该记录, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          axios({
+            method: "POST",
+            url: `http://localhost:8888/account/${row._id}`,
+            data: params,
+          }).then(res => {
+            this.handleGetAccount();
+            this.$message({
+              type: "success",
+              message: "审核成功!"
+            });
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消审核"
+          });
+        });
     },
   }
 };

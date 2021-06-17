@@ -5,7 +5,7 @@
         class="charts-panel-item"
         v-for="panel in panelTotal"
         :key="panel.name"
-        :style="{background: panel.panelColor}"
+        :style="{ background: panel.panelColor }"
       >
         <div>
           <p>{{ panel.name }}</p>
@@ -26,65 +26,129 @@ export default {
   data() {
     return {
       panelTotal: [
-        {name: "分类总数", total: 101, panelColor: "#6cc9b6"},
-        {name: "出库统计", total: 93, panelColor: "#71a1d1"},
-        {name: "入库统计", total: 2220, panelColor: "#8c96de"},
-        {name: "财务报销总计", total: 34939, panelColor: "#deae79"},
-        {name: "申领总计", total: 101, panelColor: "#b03a5b"},
-        {name: "用户数量", total: 88, panelColor: "#676980"}
-      ]
+        { name: "分类总数", total: 0.0, panelColor: "#6cc9b6" },
+        { name: "采购统计", total: 0, panelColor: "#71a1d1" },
+        { name: "入库统计", total: 0, panelColor: "#8c96de" },
+        { name: "财务报销总计", total: 0, panelColor: "#deae79" },
+        { name: "申领人总计", total: 0, panelColor: "#b03a5b" },
+        { name: "用户数量", total: 0, panelColor: "#676980" }
+      ],
+      bxcount: 0,
+      categoryTypeText: [],
+      categoryTypeValue: [],
+      putCount: []
     };
   },
   methods: {
     drawLine() {
       let myChart = this.$echarts.init(document.getElementById("myChart"));
-      let myPie = this.$echarts.init(document.getElementById("myPie"));
       // 绘制图表
       myChart.setOption({
-        title: {text: "采购物资统计分类"},
+        title: { text: "采购物资统计分类" },
         tooltip: {},
         xAxis: {
-          data: ["衬衫", "羊毛衫", "雪纺衫", "裤子", "高跟鞋", "袜子"]
+          data: this.categoryTypeText
         },
         yAxis: {},
         series: [
           {
-            name: "销量",
+            name: "库存",
             type: "bar",
-            data: [5, 20, 36, 10, 10, 20]
+            data: this.categoryTypeValue
           }
         ]
       });
+    },
+    drawLineBt() {
+      let myPie = this.$echarts.init(document.getElementById("myPie"));
       // 绘制饼图
       myPie.setOption({
         tooltip: {
           trigger: "item"
         },
+        title: { text: "入库物资统计分类" },
         series: {
-          name: "物资出库统计",
+          name: "物资入库统计",
           type: "pie",
           radius: "55%",
-          data: [
-            {value: 235, name: "视频广告"},
-            {value: 274, name: "联盟广告"},
-            {value: 310, name: "邮件营销"},
-            {value: 335, name: "直接访问"},
-            {value: 400, name: "搜索引擎"}
-          ]
+          data: this.putCount
         }
       });
     },
     // 查询用户信息
     handleGetUser() {
       axios.get("http://localhost:8888/users").then(res => {
-        console.log(res.data.length)
-        this.panelTotal[5].total = res.data.length
+        this.panelTotal[5].total = res.data.length;
       });
     },
+    handleGetCategory() {
+      axios.get("http://localhost:8888/category").then(res => {
+        this.panelTotal[0].total = res.data.length;
+      });
+    },
+    handleGetPurse() {
+      axios.get("http://localhost:8888/purse").then(res => {
+        this.panelTotal[1].total = res.data.length;
+        let temp = {};
+        this.categoryTypeText = res.data.reduce((item, next) => {
+          if (!temp[next.category]) {
+            temp[next.category] = 1;
+            item.push(next.category);
+          } else {
+            temp[next.category]++;
+          }
+          return item;
+        }, []);
+        this.categoryTypeValue = Object.values(temp);
+        this.drawLine();
+      });
+    },
+    handleGetApply() {
+      this.$http({
+        url: "http://localhost:8888/apply",
+        method: "GET"
+      }).then(res => {
+        this.panelTotal[4].total = res.data.length;
+      });
+    },
+    handleGetAccount() {
+      axios.get("http://localhost:8888/account").then(res => {
+        let bx = res.data;
+        for (let i of bx) {
+          if (i.status == "已报销") {
+            this.bxcount++;
+          }
+        }
+        this.panelTotal[3].total = this.bxcount;
+      });
+    },
+    // 入库统计
+    handleGetInput() {
+      axios.get("http://localhost:8888/input").then(res => {
+        this.panelTotal[2].total = res.data.length;
+        let result = {};
+        res.data.forEach(item => {
+          if (result[item.category]) {
+            result[item.category] += item.num;
+          } else {
+            result[item.category] = item.num;
+          }
+        });
+        for (let k in result) {
+          this.putCount.push({ value: result[k], name: k});
+        }
+        this.drawLineBt()
+      });
+    }
   },
   mounted() {
-    this.drawLine();
-    this.handleGetUser()
+    this.handleGetUser();
+    this.handleGetCategory();
+    this.handleGetPurse();
+    this.handleGetApply();
+    this.handleGetAccount();
+    this.handleGetInput();
+    // this.drawLine();
   }
 };
 </script>

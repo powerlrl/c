@@ -1,6 +1,7 @@
 <template>
   <div class="main-home">
-   欢迎来到xg管理系统
+   <!-- <h4>欢迎来到物资调度平台</h4> -->
+   <img src="../assets/img/banner.png" width="100%" alt="">
   </div>
 </template>
 

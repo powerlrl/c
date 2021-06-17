@@ -4,18 +4,22 @@
       <el-row :gutter="20">
         <el-col :span="6">
           <div class="grid-content bg-purple d-flex">
-            <div style="width: 100px;" class="search-item">物资分类:</div>
-            <el-input type="text" size="small" placeholder="请输入用户名" />
+            <div style="width: 100px;" class="search-item">物品名称:</div>
+            <el-input
+              type="text"
+              size="mini"
+              placeholder="请输入物品名称"
+              v-model="searchName"
+            />
           </div>
         </el-col>
         <el-col :span="6">
-          <div class="grid-content bg-purple d-flex">
-            <div style="width: 120px;" class="search-item">物品名称：</div>
-            <el-input type="text" size="small" placeholder="请选择人员的类型" />
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <el-button type="primary" icon="el-icon-search" size="small"
+          <el-button
+            type="primary"
+            icon="el-icon-search"
+            size="mini"
+            @click="search"
+            round
             >搜索</el-button
           >
         </el-col>
@@ -23,32 +27,38 @@
     </div>
     <!-- 表格部分 -->
     <div
-      style="margin-top: 40px; text-align: left; background: #fafafa; padding: 10px 0;"
+    v-if="show"
+      style="text-align: right; padding: 10px 0;"
     >
-      <el-button size="mini" type="primary" @click="addPurchase"
-        >添加物资</el-button
-      >
+      <el-button size="mini" type="primary" @click="addInput"
+        >登记物资入库</el-button>
     </div>
     <div class="c-container">
       <el-table
-        :data="tableData"
+      border
+        :data="searchData"
         style="width: 100%"
         :cell-style="{ textAlign: 'center' }"
         :header-cell-style="{ background: '#fafafa', textAlign: 'center' }"
       >
-        <el-table-column label="物资分类名称" width="120">
+        <el-table-column
+          label="序号"
+          type="index"
+          width="50">
+        </el-table-column>
+        <el-table-column label="物资分类" width="120">
           <template slot-scope="scope">
             <span style="margin-left: 10px">{{ scope.row.category }}</span>
           </template>
         </el-table-column>
         <el-table-column label="物品名称" width="120">
           <template slot-scope="scope">
-            <span>{{ scope.row.wzName }}</span>
+            <span>{{ scope.row.material }}</span>
           </template>
         </el-table-column>
         <el-table-column label="数量" width="100">
           <template slot-scope="scope">
-            <span>{{ scope.row.count }}</span>
+            <span>{{ scope.row.num }}</span>
           </template>
         </el-table-column>
         <el-table-column label="单价" width="100">
@@ -56,36 +66,40 @@
             <span size="medium">{{ scope.row.price }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="采购时间" width="100">
-          <template slot-scope="scope">
-            <el-tag size="medium">{{ scope.row.time }}</el-tag>
+        <el-table-column label="采购时间" width="120">
+          <template slot-scope="scope" >
+            <span size="medium" style="color: #aaa">{{
+              scope.row.purseTime | transformTime('yyyy-mm-dd')
+            }}</span>
           </template>
         </el-table-column>
         <el-table-column label="采购人员" width="100">
           <template slot-scope="scope">
-            <span size="medium">{{ scope.row.staffName }}</span>
+            <span size="medium">{{ scope.row.purseNo }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="登记时间">
+        <el-table-column label="登记时间" width="120">
           <template slot-scope="scope">
-            <el-tag size="medium">{{ scope.row.checkDate }}</el-tag>
+            <span size="medium" style="color: #aaa">{{
+              scope.row.regTime | transformTime('yyyy-mm-dd')
+            }}</span>
           </template>
         </el-table-column>
         <el-table-column label="登记人员">
           <template slot-scope="scope">
-            <span size="medium">{{ scope.row.checkName }}</span>
+            <span size="medium">{{ scope.row.regName }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="操作" v-if="show">
           <template slot-scope="scope">
-            <el-button size="mini" @click="handleEdit(scope.$index, scope.row)"
-              >编辑</el-button
+            <el-button size="mini" type="primary" circle icon="el-icon-edit" @click="handleEdit(scope.$index, scope.row)"
+              ></el-button
             >
             <el-button
               size="mini"
-              type="danger"
+              type="info" icon="el-icon-delete" circle
               @click="handleDelete(scope.$index, scope.row)"
-              >删除</el-button
+              ></el-button
             >
           </template>
         </el-table-column>
@@ -95,12 +109,15 @@
         <el-pagination
           background
           layout="prev, pager, next"
-          :total="1000"
+          :total="20"
+          :page="page"
+          :page-size="10"
+          @current-change="handleCurrentChange"
         ></el-pagination>
       </div>
     </div>
 
-    <!-- 添加人员模态框 -->
+    <!-- 入库登记态框 -->
     <el-dialog
       title="入库登记"
       :visible.sync="dialogVisible"
@@ -114,29 +131,58 @@
         label-position="left"
         :rules="addRules"
       >
-        <el-form-item label="物资分类名称:" prop="category">
-          <el-input v-model="addForm.category" size="mini"></el-input>
+        <el-form-item label="物资分类" prop="category">
+          <el-select
+            v-model="addForm.category"
+            placeholder="请选择"
+            size="mini"
+          >
+            <el-option
+              v-for="item in option"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+          <!-- <el-input size="mini" v-model="addForm.category"></el-input> -->
         </el-form-item>
-        <el-form-item label="物品名称:" prop="wzName">
-          <el-input v-model="addForm.wzName" size="mini"></el-input>
+        <el-form-item label="物品名称:" prop="material">
+          <el-input size="mini" v-model="addForm.material"></el-input>
         </el-form-item>
-        <el-form-item label="数量:" prop="count">
-          <el-input v-model="addForm.count" size="mini"></el-input>
+        <el-form-item label="物品数量:" prop="num">
+          <el-input size="mini" v-model="addForm.num"></el-input>
         </el-form-item>
         <el-form-item label="单价:" prop="price">
-          <el-input v-model="addForm.price" size="mini"></el-input>
+          <el-input size="mini" v-model="addForm.price"></el-input>
         </el-form-item>
-        <el-form-item label="时间:" prop="time">
-          <el-input v-model="addForm.time" size="mini"></el-input>
+        <el-form-item label="采购人员:" prop="purseNo">
+          <el-input size="mini" v-model="addForm.purseNo"></el-input>
         </el-form-item>
-        <el-form-item label="员工名称:" prop="staffName">
-          <el-input v-model="addForm.staffName" size="mini"></el-input>
+        <el-form-item label="采购时间:" prop="purseTime">
+          <div class="block">
+            <el-date-picker
+              size="mini"
+              v-model="addForm.purseTime"
+              type="date"
+              placeholder="选择日期"
+            >
+            </el-date-picker>
+          </div>
         </el-form-item>
-        <el-form-item label="登记时间:" prop="checkDate">
-          <el-input v-model="addForm.checkDate" size="mini"></el-input>
+        <el-form-item label="登记人员:" prop="regName">
+          <el-input size="mini" disabled="" v-model="userInfo.username"></el-input>
         </el-form-item>
-        <el-form-item label="登记人员:" prop="checkName">
-          <el-input v-model="addForm.checkName" size="mini"></el-input>
+        <el-form-item label="登记时间:" prop="regTime">
+          <div class="block">
+            <el-date-picker
+              size="mini"
+              v-model="addForm.regTime"
+              type="date"
+              placeholder="选择日期"
+            >
+            </el-date-picker>
+          </div>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -159,31 +205,47 @@
         :model="editForm"
         label-width="auto"
         label-position="left"
-        :rules="editRules"
+        :rules="addRules"
       >
-        <el-form-item label="物资分类名称:" prop="category">
-          <el-input v-model="editForm.category" size="mini"></el-input>
+        <el-form-item label="物资分类" prop="category">
+          <el-input size="mini" v-model="editForm.category"></el-input>
         </el-form-item>
-        <el-form-item label="物品名称:" prop="wzName">
-          <el-input v-model="editForm.wzName" size="mini"></el-input>
+        <el-form-item label="物品名称:" prop="material">
+          <el-input size="mini" v-model="editForm.material"></el-input>
         </el-form-item>
-        <el-form-item label="物品数量:" prop="count">
-          <el-input v-model="editForm.count" size="mini"></el-input>
+        <el-form-item label="物品数量:" prop="num">
+          <el-input size="mini" v-model="editForm.num"></el-input>
         </el-form-item>
         <el-form-item label="单价:" prop="price">
-          <el-input v-model="editForm.price" size="mini"></el-input>
+          <el-input size="mini" v-model="editForm.price"></el-input>
         </el-form-item>
-        <el-form-item label="时间:" prop="time">
-          <el-input v-model="editForm.time" size="mini"></el-input>
+        <el-form-item label="采购人员:" prop="purseNo">
+          <el-input size="mini" v-model="editForm.purseNo"></el-input>
         </el-form-item>
-        <el-form-item label="采购人员:" prop="staffName">
-          <el-input v-model="editForm.staffName" size="mini"></el-input>
+        <el-form-item size="mini" label="采购时间:" prop="purseTime">
+          <div class="block">
+            <el-date-picker
+              size="mini"
+              v-model="editForm.purseTime"
+              type="date"
+              placeholder="选择日期"
+            >
+            </el-date-picker>
+          </div>
         </el-form-item>
-        <el-form-item label="登记时间:" prop="checkName">
-          <el-input v-model="editForm.checkDate" size="mini"></el-input>
+        <el-form-item label="登记人员:" prop="regName">
+          <el-input size="mini" disabled="" v-model="userInfo.username"></el-input>
         </el-form-item>
-        <el-form-item label="登记人员:" prop="staffName">
-          <el-input v-model="editForm.checkName" size="mini"></el-input>
+        <el-form-item label="登记时间:" prop="regTime">
+          <div class="block">
+            <el-date-picker
+              size="mini"
+              v-model="editForm.regTime"
+              type="date"
+              placeholder="选择日期"
+            >
+            </el-date-picker>
+          </div>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -208,110 +270,77 @@ export default {
       dialogVisible: false,
       addForm: {
         category: "",
-        wzName: "",
-        count: "",
+        material: "",
+        num: "",
         price: "",
-        time: "",
-        staffName: "",
-        checkName: "",
-        checkDate: ""
+        purseTime: "",
+        purseNo: "",
+        regTime: "",
+        regName: ""
       },
-      tableData: [
-        {
-          category: "护目镜1",
-          wzName: "A级别",
-          count: 50,
-          price: 55,
-          time: "2020-10-04",
-          staffName: "liuyun",
-          checkName: "小林",
-          checkDate: "2011-11-01"
-        },
-        {
-          category: "护目镜2",
-          wzName: "A级别",
-          count: 50,
-          price: 55,
-          time: "2020-10-04",
-          staffName: "liuyun",
-          checkName: "小林2",
-          checkDate: "2012-12-1"
-        },
-        {
-          category: "护目镜3",
-          wzName: "A级别",
-          count: 50,
-          price: 55,
-          time: "2020-10-04",
-          staffName: "liuyun",
-          checkName: "小林3",
-          checkDate: "2013-02-03"
-        }
-      ],
+      page: 1,
+      tableData: [],
       addRules: {
         category: [
           { required: true, message: "请输入分类名称", trigger: "blur" }
         ],
-        wzName: [
+        material: [
           { required: true, message: "请输入物品名称", trigger: "blur" }
         ],
-        count: [{ required: true, message: "物品数量", trigger: "blur" }],
+        num: [{ required: true, message: "物品数量", trigger: "blur" }],
         price: [{ required: true, message: "请输入价格", trigger: "blur" }],
-        time: [{ required: true, message: "请选择日期", trigger: "blur" }],
-        staffName: [
-          { required: true, message: "请输入采购员姓名", trigger: "blur" }
+        purseTime: [{ required: true, message: "请选择日期", trigger: "blur" }],
+        purseNo: [
+          { required: true, message: "请填写采购人员姓名", trigger: "blur" }
         ],
-        checkName: [
-          { required: true, message: "请输入登记员的名称", trigger: "blur"},
-        ],
-        checkDate: [
-          { required: true, message: "请选择入库日期", trigger: "blur"}
-        ],
+        regTime: [
+          { required: true, message: "请选择入库日期", trigger: "blur" }
+        ]
       },
+      show: true,
       dialogVisibleEdit: false,
       editForm: {
         category: "",
-        wzName: "",
-        count: "",
+        material: "",
+        num: "",
         price: "",
-        time: "",
-        staffName: "",
-        checkName: "",
-        checkDate: "",
+        purseNo: "",
+        purseTime: "",
+        regTime: "",
+        regName: ""
       },
-      editRules: {
-        category: [
-          { required: true, message: "请输入分类名称", trigger: "blur" }
-        ],
-        wzName: [
-          { required: true, message: "请输入物品名称", trigger: "blur" }
-        ],
-        count: [{ required: true, message: "物品数量", trigger: "blur" }],
-        price: [{ required: true, message: "请输入价格", trigger: "blur" }],
-        time: [{ required: true, message: "请选择日期", trigger: "blur" }],
-        staffName: [
-          { required: true, message: "请输入采购员姓名", trigger: "blur" }
-        ]
-      }
+      userInfo: {},
+      searchName: "",
+      searchData: [],
+      option: [],
     };
   },
   async mounted() {
-    // this.handleGetUser()
+    this.handleGetCategory()
+    this.handleGetInput();
+    this.userInfo = JSON.parse(localStorage.getItem("userInfo"))
+    if (this.userInfo.type != '后勤人员') {
+      this.show = false
+    }
   },
   methods: {
     handleEdit(index, row) {
       // console.log(row);
-      console.log(row);
       this.editForm.category = row.category;
-      this.editForm.wzName = row.wzName;
+      this.editForm.material = row.material;
       this.editForm.price = row.price;
-      this.editForm.count = row.count;
-      this.editForm.time = row.time;
-      this.editForm.staffName = row.staffName;
-      this.editForm.checkName = row.checkName;
-      this.editForm.checkDate = row.checkDate;
-      this.dialogVisibleEdit = true;
+      this.editForm.num = row.num;
+      this.editForm.purseNo = row.purseNo;
+      this.editForm.purseTime = row.purseTime;
+      this.editForm.regName = this.userInfo.username;
+      this.editForm.regTime = row.regTime;
+      this.editForm.row = row;
 
+      this.dialogVisibleEdit = true;
+    },
+    handleCurrentChange(page) {
+      this.page = page;
+      this.handleGetInput();
     },
     handleDelete(index, row) {
       this.$confirm("此操作将永久删除该文件, 是否继续?", "提示", {
@@ -320,12 +349,9 @@ export default {
         type: "warning"
       })
         .then(() => {
-          axios
-            .delete(`http://localhost:8888/users/delete/${row._id}`)
-            .then(res => {
-              console.log(res);
-              this.handleGetUser();
-            });
+          axios.delete(`http://localhost:8888/input/${row._id}`).then(res => {
+            this.handleGetInput();
+          });
           this.$message({
             type: "success",
             message: "删除成功!"
@@ -338,8 +364,9 @@ export default {
           });
         });
     },
-    addPurchase() {
+    addInput() {
       this.dialogVisible = true;
+      this.addForm.regName = this.userInfo.username
     },
     handleCloseDialog() {
       this.dialogVisible = false;
@@ -369,17 +396,11 @@ export default {
         if (valid) {
           axios({
             method: "POST",
-            url: "http://localhost:8888/users/create",
-            data: {
-              username: this.addForm.name,
-              password: this.addForm.password,
-              sex: this.addForm.sex,
-              phone: this.addForm.phone,
-              type: this.addForm.type
-            }
+            url: "http://localhost:8888/input/add",
+            data: this.addForm
           }).then(res => {
             this.dialogVisible = false;
-            this.handleGetUser();
+            this.handleGetInput();
           });
         } else {
           const h = this.$createElement;
@@ -396,10 +417,24 @@ export default {
       });
     },
     submitEditForm(form) {
-      // console.log(form)
       this.$refs[form].validate(valid => {
         if (valid) {
-          alert("submit");
+          let row = this.editForm.row;
+          this.$http({
+            method: "PUT",
+            url: `http://localhost:8888/input/${row._id}`,
+            data: this.editForm
+          }).then(res => {
+            if (res.status == 200) {
+              this.$message({
+                type: "success",
+                message: "修改成功!"
+              });
+              this.dialogVisible2 = false;
+              this.handleGetInput();
+            }
+          });
+
           this.dialogVisibleEdit = false;
         } else {
           const h = this.$createElement;
@@ -415,15 +450,46 @@ export default {
         }
       });
     },
+    search() {
+      if (this.searchName == "") {
+        this.searchData = this.tableData
+      }
+      if (this.searchName != '') {
+        this.searchData = this.searchData.filter(item => {
+          return item.material == this.searchName
+        });
+      }
+    },
     // 编辑
     handleCloseEdit() {
       this.dialogVisibleEdit = false;
     },
     // 查询用户信息
-    handleGetUser() {
-      axios.get("http://localhost:8888/users").then(res => {
-        console.log(res);
+    handleGetInput() {
+      this.$http({
+        url: "http://localhost:8888/input",
+        method: "POST",
+        data: {
+          page: this.page,
+        }
+      }).then(res => {
         this.tableData = res.data;
+        this.searchData = this.tableData
+      });
+    },
+    handleGetCategory() {
+      this.$http({
+        url: "http://localhost:8888/category",
+        method: "POST",
+        data: {}
+      }).then(res => {
+        this.option = res.data.reduce((arr, item) => {
+          let obj = {};
+          obj["value"] = item.name;
+          obj["label"] = item.name;
+          arr.push(obj);
+          return arr;
+        }, []);
       });
     }
   }

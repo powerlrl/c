@@ -16,7 +16,7 @@ module.exports = {
   devServer: {
     proxy: {
         '/api': {
-            // 此处的写法，目的是为了 将 /api 替换成 https://www.baidu.com/
+            // 此处的写法，目的是为了 将 /api 替换成 https://
             target: 'https://interface.sina.cn/news/wap',
             // 允许跨域
             changeOrigin: true,
@@ -24,7 +24,15 @@ module.exports = {
             pathRewrite: {
                 '^/api': ''
             }
-        }
+        },
+        '/163': {
+          target: "https://c.m.163.com/ug/api/wuhan/app/data/list-total",
+          changeOrigin: true,
+          ws: true,
+          pathRewrite: {
+              '^/163': ''
+          }
+        },
     },
     disableHostCheck: true
 }

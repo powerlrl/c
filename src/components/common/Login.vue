@@ -1,12 +1,15 @@
 <template>
   <div class="login-box">
-    <div class="login-topbar">
+    <div class="login-left">
       <div class="login-title">
-        <div class="login-title-text">校园物资调度平台</div>
+        <div class="login-title-text">信息技术与校园深度结合</div>
       </div>
-      <div class="login-type-tips">学校各部门管理人员</div>
+      <h1 class="login-left-text">校园物资调度平台</h1>
+      <div>资源管理 & 智能分析</div>
     </div>
+
     <div class="login-form-wrap">
+      <h2 class="form-text">校园物资调度平台</h2>
       <el-form
         :model="loginForm"
         status-icon
@@ -42,8 +45,8 @@ export default {
   data() {
     return {
       loginForm: {
-        username: "待炒的鱼7",
-        password: "888888"
+        username: "小林",
+        password: "123456"
       },
       loginRules: {}
     }
@@ -77,29 +80,40 @@ export default {
 </script>
 
 <style scoped>
-.login-topbar {
-  height: 300px;
-  width: 100%;
-  background: #0081dc;
-}
-.login-title {
-  color: #f5f5f5;
-  font-size: 25px;
-  height: 160px;
-  /* background: red; */
+
+.login-box {
+  background: #378ace;
+  height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: flex-end;
+  align-items: center;
 }
-.login-title-text {
-  padding-bottom: 10px;
+.login-left {
+  color: #f1f1f1;
+  width: 400px;
+  text-align: center;
+  padding: 50px 0;
+  border-top: 1px solid rgba(255, 255, 255, .3);;
+  border-bottom: 1px solid rgba(255, 255, 255, .3);
+  margin-right: 80px;
 }
 .login-form-wrap {
   width: 300px;
-  margin: -100px auto;
-  background: #ffffffff;
+  height: 300px;
+  background: #f1f1f1;
   box-shadow: 5px 5px 10px #888888;
   padding: 35px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.form-text {
+  color: #6599ff;
+  border-bottom: 1px solid #6599ff;
+  text-align: center;
+  padding-bottom: 10px;
+  width: 250px;
 }
 .login-form-item {
   width: 100%;

@@ -83,11 +83,12 @@ const router = new VueRouter({
 router.beforeEach((to, from, next)=> {
   const token = localStorage.getItem("token")
   // 没有匹配到路由
-  if (!token && to.path != "/") {
-    next("/")
-  } else {
-    next()
-  }
+  // if (!token && to.path != "/") {
+  //   next("/")
+  // } else {
+    // next()
+  // }
+  next()
 }) 
 
 export default router

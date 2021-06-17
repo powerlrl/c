@@ -1,47 +1,51 @@
 <template>
-  <div class="map-container">
+  <div class="map-container" v-loading="loading">
+    <el-row>
+      <div class="map-panel" v-if="Object.keys(chinaTotal).length !== 0">
+        <div class="num-card">
+          <h3>境外输入</h3>
+          <div class="num color-o">{{ chinaTotal.total.input }}</div>
+          <span class="num-yes">较昨日</span><span class="color-o">+{{ chinaTotal.today.input }}</span>
+        </div>
+        <div class="num-card">
+          <h3>无症状感染者</h3>
+          <div class="num color-h">{{ chinaTotal.extData.noSymptom }}</div>
+          <span class="num-yes">较昨日</span><span class="color-h">+{{ chinaTotal.extData.incrNoSymptom }}</span> 
+        </div>
+        <div class="num-card">
+          <h3>现有确诊</h3>
+          <div class="num color-r">{{ storeConfirm }}</div>
+          <span class="num-yes">较昨日</span><span class="color-r">+{{ chinaTotal.today.storeConfirm }}</span>
+        </div>
+        <div class="num-card">
+          <h3>累计确诊</h3>
+          <div class="num color-e">{{ chinaTotal.total.confirm }}</div>
+          <span class="num-yes">较昨日</span><span class="color-e">+{{ chinaTotal.today.confirm }}</span>
+        </div>
+        <div class="num-card">
+          <h3>累计死亡</h3>
+          <div class="num color-e">{{ chinaTotal.total.dead }}</div>
+          <span class="num-yes">较昨日</span><span class="color-e">+{{ chinaTotal.today.dead }}</span>
+        </div>
+        <div class="num-card">
+          <h3>累计治愈</h3>
+          <div class="num color-g">{{ chinaTotal.total.heal }}</div>
+          <span class="num-yes">较昨日</span><span class="color-g">+{{ chinaTotal.today.heal }}</span>
+        </div>
+      </div>
+    </el-row>
     <el-row :gutter="20">
-      <el-col :span="12">
-        <el-card class="box-card" style="width: 100%;">
-          <el-table
-            :data="mapData"
-            border
-            style="width: 100%; font-size: 12px;"
-          >
-            <el-table-column prop="name" label="名称" width="100">
-            </el-table-column>
-            <!-- <el-table-column prop="econNum" label="数量" width="80">
-            </el-table-column> -->
-            <el-table-column prop="econNum" label="数量" width="80">
-              <template slot-scope="scope">
-                <el-tag effect="plain" disable-transitions size="mini"
-                  >{{ scope.row.econNum }}人</el-tag
-                >
-              </template>
-            </el-table-column>
-            <el-table-column prop="addecon_new" label="较昨日" width="100">
-              <template slot-scope="scope">
-                <el-tag
-                  disable-transitions
-                  size="mini"
-                  type="danger"
-                  effect="plain"
-                  >{{ scope.row.addecon_new }}人</el-tag
-                >
-              </template>
-            </el-table-column>
-            <el-table-column prop="time" label="时间"></el-table-column>
-          </el-table>
-        </el-card>
+      <el-col :span="13">
+        <!-- 疫情地图 -->
+        <div class="map-yq">
+          <div id="chart" style="width: 600px;height: 500px"></div>
+        </div>
       </el-col>
-      <el-col :span="12">
-        <el-card class="box-card" :body-style="{paddingTop: '5px'}" style="width: 100%; color: #909399; font-size: 12px;">
+      <el-col :span="11">
+        <el-card
+        >
           <p>Top10城市</p>
-          <el-table
-            :data="topTen"
-            style="width: 100%; font-size: 12px;"
-            stripe
-          >
+          <el-table :data="topTen" style="width: 100%; font-size: 12px; height: 400px;overflow: auto" stripe>
             <el-table-column prop="name" label="城市名称"></el-table-column>
             <el-table-column prop="ename" label="English"> </el-table-column>
             <el-table-column prop="jwsrNum" label="确诊输入">
@@ -63,80 +67,98 @@
 </template>
 
 <script>
+import "echarts/map/js/china.js";
 export default {
   data() {
     return {
       mapData: [],
       arr: [],
-      topTen: []
+      topTen: [],
+      myChinaChart: "",
+      lists: [],
+      chinaTotal: {
+      },
+      chinaDayList: [],
+      storeConfirm: "",
+      loading: false,
     };
   },
   created() {
+    this.loading = true
     this.$http({
       method: "GET",
-      url: "/fymap2020_data.d.json"
+      url: "/163"
+    }).then(res => {
+      this.chinaTotal = res.data.data.chinaTotal
+      this.chinaDayList = res.data.data.chinaDayList
+      this.storeConfirm = this.chinaDayList[this.chinaDayList.length - 1].total.storeConfirm
+      console.log(this.storeConfirm)
+    })
+
+    this.$http({
+      method: "GET",
+      url: "/api/fymap2020_data.d.json"
     }).then(res => {
       let data = res.data.data;
-      this.arr[0] = {
-        name: "现存确诊",
-        econNum: data.econNum,
-        addecon_new: data.add_daily.addecon_new,
-        time: data.times
-      };
-      this.arr[1] = {
-        name: "累计境外输入",
-        econNum: data.jwsrNum,
-        addecon_new: data.add_daily.addjwsr,
-        time: data.times
-      };
-      this.arr[2] = {
-        name: "现无症状",
-        econNum: data.asymptomNum,
-        addecon_new: data.add_daily.wjw_addsus,
-        time: data.times
-      };
-      this.arr[3] = {
-        name: "现存确诊重症",
-        econNum: data.heconNum,
-        addecon_new: data.add_daily.addhecon_new,
-        time: data.times
-      };
-      this.arr[4] = {
-        name: "累计确诊",
-        econNum: data.gntotal,
-        addecon_new: data.add_daily.addcon_new,
-        time: data.times
-      };
-      this.arr[5] = {
-        name: "累计死亡",
-        econNum: data.deathtotal,
-        addecon_new: data.add_daily.adddeath_new,
-        time: data.times
-      };
-      this.arr[6] = {
-        name: "累计治愈",
-        econNum: data.curetotal,
-        addecon_new: data.add_daily.addcure_new,
-        time: data.times
-      };
-      this.arr[7] = {
-        name: "现存疑似",
-        econNum: data.sustotal,
-        addecon_new: data.add_daily.addasymptom,
-        time: data.times
-      };
+      this.lists = res.data.data.list;
       this.mapData = this.arr;
       this.topTen = data.jwsrTop;
-      console.log(this.topTen);
+      this.loading = false
+      this.getData();
     });
   },
+  mounted() {
+
+  },
   methods: {
-    
+    getData() {
+      this.myChinaChart = this.$echarts.init(document.getElementById("chart"));
+      let option = {
+        title: {
+          text: "疫情地图一览",
+          x: "center",
+          textStyle: {
+            color: "#9c0505"
+          }
+        },
+        tooltip: {
+          tirgger: "item",
+          formatter: "地区：{b}<br/>确诊：{c}"
+        },
+        series: [
+          {
+            type: "map",
+            map: "china",
+            data: [],
+            label: {
+              show: true,
+              color: "black",
+              fontSize: 10
+            },
+            zoom: 1.25,
+            itemStyle: {
+              borderColor: "gray"
+            },
+            emphasis: {
+              label: {},
+              itemStyle: {}
+            }
+          }
+        ]
+      };
+      option.series[0].data = this.lists;
+      // 使用刚指定的配置项和数据显示图表。
+      this.myChinaChart.setOption(option);
+    }
   }
 };
 </script>
 
 <style scoped>
+* {
+  padding: 0;
+  margin: 0;
+}
 .card-item {
   display: flex;
 }
@@ -153,8 +175,8 @@ export default {
 
 .box-card {
   width: 480px;
-  max-height: 460px;
-  overflow: auto;
+  /* max-height: 460px;
+  overflow: auto; */
   /* background: red; */
 }
 .el-table .warning-row {
@@ -163,5 +185,43 @@ export default {
 
 .el-table .success-row {
   background: #f0f9eb;
+}
+.map-panel {
+  padding: 20px 80px 50px 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.num {
+  font-size: 35px;
+  font-weight: 900;
+  padding: 10px 0;
+}
+.color-o {
+  color: #ffa352;
+}
+.color-h {
+  color: #791618;
+}
+.color-r {
+  color: #e44a3d;
+}
+.color-e {
+  color: #a31d13;
+}
+.color-b {
+  color: #333333;
+}
+.color-g {
+  color: #34aa70;
+}
+.num-card {
+  /* padding: 20px; */
+  padding-right: 20px;
+  border-right: 1px solid #eeeeee;
+}
+.num-card .num-yes {
+  font-size: 14px;
+  color: #777777;
 }
 </style>

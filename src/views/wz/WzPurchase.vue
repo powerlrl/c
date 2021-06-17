@@ -4,79 +4,106 @@
       <el-row :gutter="20">
         <el-col :span="6">
           <div class="grid-content bg-purple d-flex">
-            <div style="width: 100px;" class="search-item">物资分类:</div>
-            <el-input type="text" size="small" placeholder="请输入用户名" />
+            <div style="width: 100px;" class="search-item">分类名称:</div>
+            <el-input
+              type="text"
+              size="mini"
+              placeholder="请输入物品名称"
+              v-model="searchName"
+            />
           </div>
         </el-col>
         <el-col :span="6">
-          <div class="grid-content bg-purple d-flex">
-            <div style="width: 120px;" class="search-item">物品名称：</div>
-            <el-input type="text" size="small" placeholder="请选择人员的类型" />
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <el-button type="primary" icon="el-icon-search" size="small"
+          <el-button
+            type="primary"
+            icon="el-icon-search"
+            size="mini"
+            @click="search"
+            round
             >搜索</el-button
           >
         </el-col>
       </el-row>
     </div>
     <!-- 表格部分 -->
-    <div
-      style="margin-top: 40px; text-align: left; background: #fafafa; padding: 10px 0;"
-    >
-      <el-button size="mini" type="primary" @click="addPurchase"
-        >添加物资</el-button
-      >
+    <div style="text-align: right;padding: 10px 0;">
+      <el-row :gutter="22">
+        <el-col :span="19"> </el-col>
+        <el-col :span="2"> </el-col>
+      </el-row>
+      <div style="display: flex; justify-content: flex-end">
+        <el-button size="mini" type="primary" v-if="show" @click="addPurchase"
+          >创建采购计划</el-button
+        >
+        <download-excel
+          :data="json_data"
+          :fields="json_fields"
+          name="采购物资统计表"
+        >
+          <el-button size="mini" style="margin-left: 10px;" type="primary">导出采购物资表</el-button>
+        </download-excel>
+      </div>
     </div>
     <div class="c-container">
       <el-table
-        :data="tableData"
+        border
+        :data="searchData"
         style="width: 100%"
         :cell-style="{ textAlign: 'center' }"
         :header-cell-style="{ background: '#fafafa', textAlign: 'center' }"
       >
-        <el-table-column label="物资分类名称" width="200">
+        <el-table-column label="序号" type="index" width="50">
+        </el-table-column>
+        <el-table-column label="物资分类名称">
           <template slot-scope="scope">
             <span style="margin-left: 10px">{{ scope.row.category }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="物品名称" width="200">
+        <el-table-column label="物品名称">
           <template slot-scope="scope">
-            <span>{{ scope.row.wzName }}</span>
+            <span>{{ scope.row.material }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="数量" width="100">
+        <el-table-column label="数量">
           <template slot-scope="scope">
-            <span>{{ scope.row.count }}</span>
+            <span>{{ scope.row.num }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="单价" width="100">
+        <el-table-column label="单价">
           <template slot-scope="scope">
             <span size="medium">{{ scope.row.price }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="采购时间" width="100">
+        <el-table-column label="采购时间">
           <template slot-scope="scope">
-            <el-tag size="medium">{{ scope.row.time }}</el-tag>
+            <span size="medium">{{
+              scope.row.purseTime | transformTime('yyyy-mm-dd')
+            }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="采购人员" width="100">
+        <el-table-column label="采购人员">
           <template slot-scope="scope">
-            <span size="medium">{{ scope.row.staffName }}</span>
+            <span size="medium">{{ scope.row.purseUserName }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="操作" v-if="show">
           <template slot-scope="scope">
-            <el-button size="mini" @click="handleEdit(scope.$index, scope.row)"
-              >编辑</el-button
-            >
-            <el-button
-              size="mini"
-              type="danger"
-              @click="handleDelete(scope.$index, scope.row)"
-              >删除</el-button
-            >
+            <div>
+              <el-button
+                size="mini"
+                type="primary"
+                icon="el-icon-edit"
+                circle
+                @click="handleEdit(scope.$index, scope.row)"
+              ></el-button>
+              <el-button
+                size="mini"
+                @click="handleDelete(scope.$index, scope.row)"
+                type="info"
+                icon="el-icon-delete"
+                circle
+              ></el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -85,14 +112,17 @@
         <el-pagination
           background
           layout="prev, pager, next"
-          :total="1000"
+          :total="100"
+          :page="page"
+          :page-size="10"
+          @current-change="handleCurrentChange"
         ></el-pagination>
       </div>
     </div>
 
     <!-- 添加人员模态框 -->
     <el-dialog
-      title="添加人员信息"
+      title="添加采购计划"
       :visible.sync="dialogVisible"
       width="30%"
       :before-close="handleCloseDialog"
@@ -105,22 +135,48 @@
         :rules="addRules"
       >
         <el-form-item label="物资分类名称:" prop="category">
-          <el-input v-model="addForm.category" size="mini"></el-input>
+          <el-select
+            v-model="addForm.category"
+            placeholder="请选择"
+            size="mini"
+          >
+            <el-option
+              v-for="item in option"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+          <!-- <el-input v-model="addForm.category" size="mini"></el-input> -->
         </el-form-item>
-        <el-form-item label="物品名称:" prop="wzName">
-          <el-input v-model="addForm.wzName" size="mini"></el-input>
+        <el-form-item label="物品名称:" prop="material">
+          <el-input v-model="addForm.material" size="mini"></el-input>
         </el-form-item>
-        <el-form-item label="数量:" prop="count">
-          <el-input v-model="addForm.count" size="mini"></el-input>
+        <el-form-item label="数量:" prop="num">
+          <el-input v-model="addForm.num" size="mini"></el-input>
         </el-form-item>
         <el-form-item label="单价:" prop="price">
           <el-input v-model="addForm.price" size="mini"></el-input>
         </el-form-item>
-        <el-form-item label="时间:" prop="time">
-          <el-input v-model="addForm.time" size="mini"></el-input>
+        <el-form-item label="时间:" prop="purseTime">
+          <div class="block">
+            <el-date-picker
+              size="mini"
+              v-model="addForm.purseTime"
+              type="date"
+              placeholder="选择日期"
+            >
+            </el-date-picker>
+          </div>
+          <!-- <el-input v-model="addForm.purseTime" size="mini"></el-input> -->
         </el-form-item>
-        <el-form-item label="员工名称:" prop="staffName">
-          <el-input v-model="addForm.staffName" size="mini"></el-input>
+        <el-form-item label="采购员姓名:" prop="purseUserName">
+          <el-input
+            disabled=""
+            v-model="userInfo.username"
+            size="mini"
+          ></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -133,7 +189,7 @@
 
     <!-- 编辑人员信息模态框 -->
     <el-dialog
-      title="编辑人员信息"
+      title="编辑采购信息"
       :visible.sync="dialogVisibleEdit"
       width="30%"
       :before-close="handleCloseEdit"
@@ -146,25 +202,39 @@
         :rules="editRules"
       >
         <el-form-item label="物资分类名称:" prop="category">
-          <el-input v-model="editForm.category" size="mini"></el-input>
+          <el-select
+            v-model="editForm.category"
+            placeholder="请选择物资分类"
+            size="mini"
+          >
+            <el-option
+              v-for="item in option"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+          <!-- <el-input v-model="editForm.category" size="mini"></el-input> -->
         </el-form-item>
-        <el-form-item label="物品名称:">
-          <el-input v-model="editForm.wzName" size="mini"></el-input>
+        <el-form-item label="物品名称:" prop="material">
+          <el-input v-model="editForm.material" size="mini"></el-input>
         </el-form-item>
-        <el-form-item label="物品数量:" prop="count">
-          <el-input v-model="editForm.count" size="mini"></el-input>
+        <el-form-item label="物品数量:" prop="num">
+          <el-input v-model="editForm.num" size="mini"></el-input>
         </el-form-item>
         <el-form-item label="单价:" prop="price">
+          <el-input v-model="editForm.price" size="mini"></el-input>
+        </el-form-item>
+        <el-form-item label="时间:" prop="purseTime">
+          <el-input v-model="editForm.purseTime" size="mini"></el-input>
+        </el-form-item>
+        <el-form-item label="采购员">
           <el-input
-            v-model="editForm.price"
+            disabled=""
+            v-model="editForm.purseUserName"
             size="mini"
           ></el-input>
-        </el-form-item>
-        <el-form-item label="时间:" prop="time">
-          <el-input v-model="editForm.time" size="mini"></el-input>
-        </el-form-item>
-        <el-form-item label="时间:" prop="staffName">
-          <el-input v-model="editForm.staffName" size="mini"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -189,110 +259,83 @@ export default {
       dialogVisible: false,
       addForm: {
         category: "",
-        wzName: "",
-        count: "",
+        material: "",
+        num: "",
         price: "",
-        time: "",
-        staffName: ""
+        purseTime: "",
+        purseUserName: ""
       },
-      tableData: [
-        {
-          category: "护目镜1",
-          wzName: "A级别",
-          count: 50,
-          price: 55,
-          time: "2020-10-04",
-          staffName: "liuyun"
-        },
-        {
-          category: "护目镜2",
-          wzName: "A级别",
-          count: 50,
-          price: 55,
-          time: "2020-10-04",
-          staffName: "liuyun"
-        },
-        {
-          category: "护目镜3",
-          wzName: "A级别",
-          count: 50,
-          price: 55,
-          time: "2020-10-04",
-          staffName: "liuyun"
-        }
-      ],
+      tableData: [],
       addRules: {
         category: [
-          { required: true, message: "请输入分类名称", trigger: "blur" },
+          { required: true, message: "请输入分类名称", trigger: "blur" }
         ],
-        wzName: [
-          { required: true, message: "请输入物品名称", trigger: "blur" },
+        material: [
+          { required: true, message: "请输入物品名称", trigger: "blur" }
         ],
-        count: [
-          { required: true, message: "物品数量", trigger: "blur" },
-        ],
-        price: [
-          { required: true, message: "请输入价格", trigger: "blur" },
-        ],
-        time: [
-          { required: true, message: "请选择日期", trigger: "blur" }
-        ],
-        staffName: [
-          { required: true, message: "请输入采购员姓名", trigger: "blur" }
-        ]
+        num: [{ required: true, message: "请输入物品数量", trigger: "blur" }],
+        price: [{ required: true, message: "请输入价格", trigger: "blur" }],
+        purseTime: [{ required: true, message: "请选择日期", trigger: "blur" }]
       },
       dialogVisibleEdit: false,
       editForm: {
         category: "",
-        wzName: "",
-        count: "",
+        material: "",
+        num: "",
         price: "",
-        time: "",
-        staffName: ""
+        purseTime: "",
+        purseUserName: ""
       },
       editRules: {
         category: [
-          { required: true, message: "请输入分类名称", trigger: "blur" },
+          { required: true, message: "请输入分类名称", trigger: "blur" }
         ],
-        wzName: [
-          { required: true, message: "请输入物品名称", trigger: "blur" },
+        material: [
+          { required: true, message: "请输入物品名称", trigger: "blur" }
         ],
-        count: [
-          { required: true, message: "物品数量", trigger: "blur" },
-        ],
-        price: [
-          { required: true, message: "请输入价格", trigger: "blur" },
-        ],
-        time: [
-          { required: true, message: "请选择日期", trigger: "blur" }
-        ],
-        staffName: [
+        num: [{ required: true, message: "物品数量", trigger: "blur" }],
+        price: [{ required: true, message: "请输入价格", trigger: "blur" }],
+        purseTime: [{ required: true, message: "请选择日期", trigger: "blur" }],
+        purseUserName: [
           { required: true, message: "请输入采购员姓名", trigger: "blur" }
         ]
-      }
+      },
+      show: true,
+      searchData: [],
+      searchName: "",
+      categories: [],
+      option: [],
+      userInfo: {},
+      page: 1,
+      json_fields: {
+        //导出Excel表格的表头设置
+        物资分类名称: "category",
+        物品名称: "material",
+        数量: "num",
+        单价: "price",
+        采购时间: "purseTime",
+        采购人员: "purseUserName"
+      },
+      json_data: []
     };
   },
   async mounted() {
-    // this.handleGetUser()
+    this.handleGetPurse();
+    this.handleGetCategory();
+    this.userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    if (this.userInfo.type != "采购员") {
+      this.show = false;
+    }
   },
   methods: {
     handleEdit(index, row) {
-      // console.log(row);
-      console.log(row)
-      this.editForm.category = row.category
-      this.editForm.wzName = row.wzName
-      this.editForm.price = row.price
-      this.editForm.count = row.count
-      this.editForm.time = row.time
-      this.editForm.staffName = row.staffName
-      // axios.get(`http://localhost:8888/users/${row._id}`).then(res => {
-      //   console.log(res);
-      //   this.editForm.name = res.data.username;
-      //   this.editForm.password = res.data.password;
-      //   this.editForm.sex = res.data.sex;
-      //   this.editForm.phone = res.data.phone;
-      //   this.editForm.type = res.data.type;
-      // });
+      this.editForm.category = row.category;
+      this.editForm.material = row.material;
+      this.editForm.price = row.price;
+      this.editForm.num = row.num;
+      this.editForm.purseTime = row.purseTime;
+      this.editForm.purseUserName = row.purseUserName;
+      this.editForm.id = row._id;
       this.dialogVisibleEdit = true;
     },
     handleDelete(index, row) {
@@ -302,12 +345,12 @@ export default {
         type: "warning"
       })
         .then(() => {
-          axios
-            .delete(`http://localhost:8888/users/delete/${row._id}`)
-            .then(res => {
-              console.log(res);
-              this.handleGetUser();
-            });
+          axios.delete(`http://localhost:8888/purse/${row._id}`).then(res => {
+            this.handleGetPurse();
+          });
+          axios.delete(`http://localhost:8888/account/${row._id}`).then(res => {
+            // console.log(res)
+          });
           this.$message({
             type: "success",
             message: "删除成功!"
@@ -319,6 +362,16 @@ export default {
             message: "已取消删除"
           });
         });
+    },
+    search() {
+      if (this.searchName == "") {
+        this.searchData = this.tableData;
+      }
+      if (this.searchName != "") {
+        this.searchData = this.searchData.filter(item => {
+          return item.material == this.searchName;
+        });
+      }
     },
     addPurchase() {
       this.dialogVisible = true;
@@ -345,23 +398,42 @@ export default {
         }
       });
     },
+    handleCurrentChange(page) {
+      this.page = page;
+      this.handleGetPurse();
+    },
     submitAddForm(form) {
-      // this.handleValidate(form)
       this.$refs[form].validate(valid => {
         if (valid) {
           axios({
             method: "POST",
-            url: "http://localhost:8888/users/create",
+            url: "http://localhost:8888/purse/add",
             data: {
-              username: this.addForm.name,
-              password: this.addForm.password,
-              sex: this.addForm.sex,
-              phone: this.addForm.phone,
-              type: this.addForm.type
+              category: this.addForm.category,
+              material: this.addForm.material,
+              num: this.addForm.num,
+              price: this.addForm.price,
+              purseTime: this.addForm.purseTime,
+              purseUserName: this.userInfo.username
+            }
+          }).then(res => {
+            this.handleGetPurse();
+            this.dialogVisible = false;
+          });
+          axios({
+            method: "POST",
+            url: "http://localhost:8888/account/add",
+            data: {
+              category: this.addForm.category,
+              material: this.addForm.material,
+              num: this.addForm.num,
+              price: this.addForm.price,
+              purseName: this.userInfo.username,
+              accountName: "",
+              status: "未报销"
             }
           }).then(res => {
             this.dialogVisible = false;
-            this.handleGetUser();
           });
         } else {
           const h = this.$createElement;
@@ -378,10 +450,27 @@ export default {
       });
     },
     submitEditForm(form) {
-      // console.log(form)
-      this.$refs[form].validate(valid => {
+      this.$refs["editForm"].validate(valid => {
         if (valid) {
-          alert("submit");
+          axios({
+            method: "PUT",
+            url: `http://localhost:8888/purse/${this.editForm.id}`,
+            data: {
+              category: this.editForm.category,
+              material: this.editForm.material,
+              num: this.editForm.num,
+              price: this.editForm.price,
+              purseTime: this.editForm.purseTime
+            }
+          }).then(res => {
+            this.handleGetPurse();
+            this.$message({
+              type: "success",
+              message: "修改成功!"
+            });
+            this.dialogVisible = false;
+          });
+
           this.dialogVisibleEdit = false;
         } else {
           const h = this.$createElement;
@@ -402,10 +491,40 @@ export default {
       this.dialogVisibleEdit = false;
     },
     // 查询用户信息
-    handleGetUser() {
-      axios.get("http://localhost:8888/users").then(res => {
-        console.log(res);
+    handleGetPurse() {
+      this.$http({
+        url: "http://localhost:8888/purse",
+        method: "POST",
+        data: {
+          page: this.page
+        }
+      }).then(res => {
         this.tableData = res.data;
+        this.json_data = res.data;
+        for (let i in this.tableData) {
+          this.tableData[i].show = false;
+          if (this.tableData[i].purseUserName == this.userInfo.username) {
+            this.tableData[i].show = true;
+          }
+        }
+        this.searchData = this.tableData;
+      });
+    },
+    // 查询物资分类信息
+    handleGetCategory() {
+      this.$http({
+        url: "http://localhost:8888/category",
+        method: "POST",
+        data: {}
+      }).then(res => {
+        this.categories = res.data;
+        this.option = this.categories.reduce((arr, item) => {
+          let obj = {};
+          obj["value"] = item.name;
+          obj["label"] = item.name;
+          arr.push(obj);
+          return arr;
+        }, []);
       });
     }
   }
